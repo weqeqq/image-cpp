@@ -1,0 +1,15 @@
+cmake_minimum_required(VERSION 3.21)
+
+project(fpng LANGUAGES CXX)
+
+add_library(fpng STATIC)
+
+target_sources(fpng PRIVATE src/fpng.cpp)
+target_sources(fpng PUBLIC 
+  FILE_SET  HEADERS 
+  BASE_DIRS ./src
+  FILES src/fpng.h)
+
+target_compile_options(fpng PRIVATE -O3 -msse4.1 -mpclmul -fno-strict-aliasing)
+
+install(TARGETS fpng FILE_SET HEADERS) 
