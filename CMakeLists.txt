@@ -59,8 +59,3 @@ install(FILES
   ${CMAKE_CURRENT_BINARY_DIR}/image-config.cmake
   ${CMAKE_CURRENT_BINARY_DIR}/image-version.cmake
   DESTINATION lib/cmake/image)
-
-add_executable(image-main)
-
-target_sources(image-main PRIVATE main.cc)
-target_link_libraries(image-main PRIVATE image)
