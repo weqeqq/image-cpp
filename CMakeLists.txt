@@ -59,3 +59,5 @@ install(FILES
   ${CMAKE_CURRENT_BINARY_DIR}/image-config.cmake
   ${CMAKE_CURRENT_BINARY_DIR}/image-version.cmake
   DESTINATION lib/cmake/image)
+
+add_subdirectory(test)
