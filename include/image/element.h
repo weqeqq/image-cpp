@@ -25,6 +25,13 @@ public:
   Element() = default;
   Element(Depth::Underlying<depth> value) : data_(CreateData(value)) {}
 
+  bool operator==(const Element<depth, color> &other) const {
+    return data_ == other.data_;
+  }
+  bool operator!=(const Element<depth, color> &other) const {
+    return !operator==(other);
+  }
+
   Element<depth, color> &operator=(Depth::Underlying<depth> value) {
     data_ = CreateData(value);
     return *this;
