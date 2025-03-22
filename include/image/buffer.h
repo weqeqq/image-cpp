@@ -80,6 +80,9 @@ public:
   std::uint64_t GetBCount() const {
     return GetLength() * Element<depth, color>::bcount;
   }
+  bool IsEmpty() const {
+    return GetLength();
+  }
 
   Element<depth, color> &operator[](std::uint64_t index) {
     return data_[index];
