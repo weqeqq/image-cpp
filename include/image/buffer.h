@@ -39,6 +39,15 @@ public:
 
   Buffer(std::uint64_t row_count, std::uint64_t column_count) : Buffer(row_count, column_count, Depth::Min<depth>) {}
 
+  bool operator==(const Buffer<depth, color> &other) const {
+    return row_count_    == other.row_count_    && 
+           column_count_ == other.column_count_ && 
+           data_         == other.data_;
+  }
+  bool operator!=(const Buffer<depth, color> &other) const {
+    return !operator==(other);
+  }
+
   static Buffer<depth, color> From(
     std::array<Buffer<depth, Color::Grayscale>, Color::ChannelCount<color>> channel_list
   ) {
