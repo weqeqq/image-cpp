@@ -103,7 +103,7 @@ public:
   Decoder(const std::string &file_name, Format::Tp format = Format::Undefined) 
     : Decoder(file_name.c_str(), format) {}
 
-  template <Depth::Tp Dh, Color::Tp Cr>
+  template <Depth::Tp Dh = Depth::Eight, Color::Tp Cr = Color::RGB>
   Buffer<Dh, Cr> Decode() const {
     switch (format_) {
       case Format::PNG  : return _Decoder::DecodePNG  <Dh, Cr>(input_);
@@ -111,7 +111,7 @@ public:
       default: throw std::runtime_error("Undefined Format");
     }
   }
-  template <Depth::Tp Dh, Color::Tp Cr>
+  template <Depth::Tp Dh = Depth::Eight, Color::Tp Cr = Color::RGB>
   Buffer<Dh, Cr> Decode(Buffer<Dh, Color::Grayscale> &alpha) const {
     switch (format_) {
       case Format::PNG  : return _Decoder::DecodePNG  <Dh, Cr>(input_, alpha);
