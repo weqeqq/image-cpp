@@ -13,7 +13,8 @@
 #include <image/element.h>
 
 namespace Image {
-template <Depth::Tp depth, Color::Tp color>
+template <Depth::Tp depth = Depth::Eight, 
+          Color::Tp color = Color::RGB>
 class Buffer {
 public:
 
