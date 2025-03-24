@@ -160,4 +160,7 @@ static typename Buffer<depth, color>::template Iterator<const Buffer<depth, colo
   return typename Buffer<depth, color>::template Iterator<const Buffer<depth, color>>(buffer, buffer.GetLength());
 }
 
+template <Depth::Tp DepthV = Depth::Eight>
+using Alpha = Buffer<DepthV, Color::Grayscale>;
+
 };
