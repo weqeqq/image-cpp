@@ -10,6 +10,7 @@ namespace Image {
 class Blending {
 public:
   enum Tp {
+    PassThrough,
     Normal,
     Dissolve,
     Darken,
@@ -18,6 +19,25 @@ public:
     LinearBurn,
     DarkerColor,
     Lighten,
+    Screen,
+    ColorDodge,
+    LinearDodge,
+    LighterColor,
+    Overlay,
+    SoftLight,
+    HardLight,
+    VividLight,
+    LinearLight,
+    PinLight,
+    HardMix,
+    Difference,
+    Exclusion,
+    Subtract,
+    Divide,
+    Hue,
+    Saturation,
+    Color,
+    Luminosity,
   };
 };
 
