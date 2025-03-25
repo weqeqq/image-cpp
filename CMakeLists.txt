@@ -29,6 +29,7 @@ target_sources(image PUBLIC
   include/image/core/depth.h 
   include/image/core/endianness.h 
   include/image/core/format.h 
+  include/image/processing/blend.h
   include/image/buffer.h 
   include/image/decoder.h 
   include/image/element.h 
