@@ -82,7 +82,7 @@ public:
     return GetLength() * Element<depth, color>::bcount;
   }
   bool IsEmpty() const {
-    return GetLength();
+    return GetLength() == 0;
   }
 
   Element<depth, color> &operator[](std::uint64_t index) {
