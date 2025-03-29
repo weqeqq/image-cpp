@@ -239,6 +239,20 @@ private:
     return output;
   }
 
+  ElementTp BlendScreen(
+    const ElementTp &background,
+    const ElementTp &foreground
+  ) const {
+    ElementTp output;
+    for (auto index = 0u;
+              index < Color::ChannelCount<ColorV>;
+              index++) {
+      auto max = Depth::Max<DepthV>;
+      output[index] = max - ((max - background[index]) * (max - foreground[index])) / max;
+    }
+    return output;
+  }
+
   ElementTp BlendElement(
     const ElementTp &background,
     const ElementTp &foreground,
@@ -256,6 +270,7 @@ private:
       case Blending::LinearBurn  : return BlendLinearBurn  (background, foreground);
       case Blending::DarkerColor : return BlendDarkerColor (background, foreground);
       case Blending::Lighten     : return BlendLighten     (background, foreground);
+      case Blending::Screen      : return BlendScreen      (background, foreground);
       default: {
         throw std::runtime_error("blerr");
       }
