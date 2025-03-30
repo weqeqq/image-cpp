@@ -253,6 +253,23 @@ private:
     return output;
   }
 
+  ElementTp BlendColorDodge(
+    const ElementTp &background,
+    const ElementTp &foreground
+  ) const {
+    ElementTp output;
+
+    auto max = Depth::Max<DepthV>;
+    for (auto index = 0u;
+              index < Color::ChannelCount<ColorV>;
+              index++) {
+      output[index] = (foreground[index] == max)
+        ? max
+        : std::min<std::uint64_t>(max, (background[index] * max) / (max - foreground[index]));
+    }
+    return output;
+  } 
+
   ElementTp BlendElement(
     const ElementTp &background,
     const ElementTp &foreground,
@@ -271,6 +288,7 @@ private:
       case Blending::DarkerColor : return BlendDarkerColor (background, foreground);
       case Blending::Lighten     : return BlendLighten     (background, foreground);
       case Blending::Screen      : return BlendScreen      (background, foreground);
+      case Blending::ColorDodge  : return BlendColorDodge  (background, foreground);
       default: {
         throw std::runtime_error("blerr");
       }
