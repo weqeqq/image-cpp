@@ -163,4 +163,11 @@ static typename Buffer<depth, color>::template Iterator<const Buffer<depth, colo
 template <Depth::Tp DepthV = Depth::Eight>
 using AlphaChannel = Buffer<DepthV, Color::Grayscale>;
 
+template <Depth::Tp DepthV = Depth::Eight, 
+          Color::Tp ColorV = Color::RGB>
+struct AlphaBuffer {
+  Buffer       <DepthV, ColorV> buffer;
+  AlphaChannel <DepthV>         alpha;
+};
+
 };
