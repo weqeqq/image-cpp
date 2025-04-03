@@ -200,7 +200,7 @@ private:
     for (auto index = 0u;
               index < Color::ChannelCount<ColorV>;
               index++) {
-      output[index] = std::max(
+      output[index] = std::max<std::int64_t>(
         0l,
         static_cast<std::int64_t>(background[index]) + 
         static_cast<std::int64_t>(foreground[index]) - Depth::Max<DepthV>);
