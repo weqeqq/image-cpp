@@ -13,7 +13,7 @@ public:
   };
 
   static Tp FromPath(std::filesystem::path path) {
-    std::string extension = path.extension();
+    std::string extension = path.extension().string();
 
     if (extension == ".png") {
       return PNG;
