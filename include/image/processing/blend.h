@@ -270,6 +270,25 @@ private:
     return output;
   } 
 
+  ElementTp BlendLinearDodge(
+    const ElementTp &background,
+    const ElementTp &foreground
+  ) const {
+    ElementTp output;
+
+    auto max = Depth::Max<DepthV>;
+    for (auto index = 0u;
+              index < Color::ChannelCount<ColorV>;
+              index++) {
+      output[index] = std::min<std::uint64_t>(
+        max, 
+        static_cast<std::uint64_t>(background[index]) +
+        static_cast<std::uint64_t>(foreground[index])
+      );
+    }
+    return output;
+  }
+
   ElementTp BlendElement(
     const ElementTp &background,
     const ElementTp &foreground,
@@ -289,6 +308,7 @@ private:
       case Blending::Lighten     : return BlendLighten     (background, foreground);
       case Blending::Screen      : return BlendScreen      (background, foreground);
       case Blending::ColorDodge  : return BlendColorDodge  (background, foreground);
+      case Blending::LinearDodge : return BlendLinearDodge (background, foreground);
       default: {
         throw std::runtime_error("blerr");
       }
