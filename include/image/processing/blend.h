@@ -289,6 +289,24 @@ private:
     return output;
   }
 
+  ElementTp BlendLighterColor(
+    const ElementTp &background,
+    const ElementTp &foreground
+  ) const {
+    auto CalculateLuminance = [](const auto &color) {
+      auto Normalize = [](const auto &value) {
+        return static_cast<float>(value) / Depth::Max<DepthV>;
+      };
+      auto rgb = ColorConvertor(color).template Convert<Color::RGB>();
+      return 0.299f * Normalize(rgb[0]) + 
+             0.587f * Normalize(rgb[1]) +
+             0.114f * Normalize(rgb[2]);
+    };
+    return CalculateLuminance(background) < CalculateLuminance(foreground)
+      ? foreground 
+      : background;
+  }
+
   ElementTp BlendElement(
     const ElementTp &background,
     const ElementTp &foreground,
@@ -298,17 +316,18 @@ private:
     ElementTp output;
 
     switch (blending) {
-      case Blending::Normal      : return BlendNormal      (background, foreground);
-      case Blending::Dissolve    : return BlendDissolve    (background, foreground, alpha);
-      case Blending::Darken      : return BlendDarken      (background, foreground);
-      case Blending::Multiply    : return BlendMultiply    (background, foreground);
-      case Blending::ColorBurn   : return BlendColorBurn   (background, foreground);
-      case Blending::LinearBurn  : return BlendLinearBurn  (background, foreground);
-      case Blending::DarkerColor : return BlendDarkerColor (background, foreground);
-      case Blending::Lighten     : return BlendLighten     (background, foreground);
-      case Blending::Screen      : return BlendScreen      (background, foreground);
-      case Blending::ColorDodge  : return BlendColorDodge  (background, foreground);
-      case Blending::LinearDodge : return BlendLinearDodge (background, foreground);
+      case Blending::Normal       : return BlendNormal      (background, foreground);
+      case Blending::Dissolve     : return BlendDissolve    (background, foreground, alpha);
+      case Blending::Darken       : return BlendDarken      (background, foreground);
+      case Blending::Multiply     : return BlendMultiply    (background, foreground);
+      case Blending::ColorBurn    : return BlendColorBurn   (background, foreground);
+      case Blending::LinearBurn   : return BlendLinearBurn  (background, foreground);
+      case Blending::DarkerColor  : return BlendDarkerColor (background, foreground);
+      case Blending::Lighten      : return BlendLighten     (background, foreground);
+      case Blending::Screen       : return BlendScreen      (background, foreground);
+      case Blending::ColorDodge   : return BlendColorDodge  (background, foreground);
+      case Blending::LinearDodge  : return BlendLinearDodge (background, foreground);
+      case Blending::LighterColor : return BlendLighterColor(background, foreground);
       default: {
         throw std::runtime_error("blerr");
       }
