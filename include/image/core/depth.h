@@ -50,4 +50,7 @@ template <>
 struct Depth::UnderlyingS<Depth::ThirtyTwo> {
   using Tp = std::uint32_t;
 };
+
+static constexpr Depth::Tp DefDepth = Depth::Eight;
+
 };
