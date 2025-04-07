@@ -27,6 +27,9 @@ public:
   static constexpr std::uint64_t ChannelCount = AlphaSetting 
     ? ChannelCountS<Value>::value + AlphaChannel
     : ChannelCountS<Value>::value;
+
+  template <Tp Value>
+  static constexpr std::uint64_t AlphaIndex = ChannelCount<Value, true> - 1;
 };
 
 template <>
