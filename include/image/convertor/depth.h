@@ -49,14 +49,11 @@ public:
     } else {
       CustomElement<OutputDepthV> output;
       for (auto index = 0u;
-                index < Color::ChannelCount<ColorV, DisableAlpha>;
+                index < Color::ChannelCount<ColorV, AlphaSetting>;
                 index++) {
         output[index] = static_cast<CustomValue<OutputDepthV>>(
           (static_cast<double>(input_[index]) / White) * CustomWhite<OutputDepthV>
         );
-      }
-      if constexpr (UsedElement::AlphaEnabled) {
-        output[Color::AlphaIndex<ColorV>] = input_[Color::AlphaIndex<ColorV>];
       }
       return output;
     }
