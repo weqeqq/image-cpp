@@ -8,119 +8,139 @@
 
 namespace Image {
 
-template <Depth::Tp depth, Color::Tp color>
+static constexpr bool DisableAlpha = false;
+static constexpr bool EnableAlpha  = true;
+
+template <Depth::Tp DepthV  = DefDepth, 
+          Color::Tp ColorV  = DefColor,
+          bool AlphaSetting = DisableAlpha>
 class Element {
 public:
 
-  template <typename>
-  class Iterator;
+  static constexpr Depth::Tp DepthValue   = DepthV;
+  static constexpr Color::Tp ColorValue   = ColorV;
+  static constexpr bool      AlphaEnabled = AlphaSetting;
 
-  static constexpr Depth::Tp depth_value = depth;
-  static constexpr Color::Tp color_value = color;
+  static constexpr std::uint64_t ChannelCount = Color::ChannelCount<ColorV, AlphaSetting>;
+  static constexpr std::uint64_t ByteCount    = Depth::Length<DepthV> * ChannelCount;
 
-  static constexpr std::uint64_t channel_count = Color::ChannelCount<color>;
-  static constexpr std::uint64_t bcount        = sizeof(Depth::Underlying<depth>) * channel_count;
-  static constexpr std::uint64_t BCount        = sizeof(Depth::Underlying<depth>) * channel_count;
+  using Value = Depth::Underlying<DepthV>;
 
   Element() = default;
-  Element(Depth::Underlying<depth> value) : data_(CreateData(value)) {}
 
-  bool operator==(const Element<depth, color> &other) const {
+  Element(Value value) {
+    for (decltype(auto) channel : data_) { channel = value; }
+  }
+
+  bool operator==(const Element &other) const {
     return data_ == other.data_;
   }
-  bool operator!=(const Element<depth, color> &other) const {
+  bool operator!=(const Element &other) const {
     return !operator==(other);
   }
 
-  Element<depth, color> &operator=(Depth::Underlying<depth> value) {
-    data_ = CreateData(value);
-    return *this;
+  Element &operator=(Value value) {
+    return *this = Element(value);
   }
 
-  Depth::Underlying<depth> &operator*() {
+  Value &operator*() {
     return data_[0];
   }
-  const Depth::Underlying<depth> &operator*() const {
+  Value operator*() const {
     return data_[0];
   }
-
-  operator Depth::Underlying<depth>() {
+  operator Value() {
     return data_[0];
   }
 
-  template <typename... Args>
-  Depth::Underlying<depth> &operator[](std::uint64_t index) {
+  Value &operator[](std::uint64_t index) {
     return data_[index];
   }
-  const Depth::Underlying<depth> &operator[](std::uint64_t index) const {
+  Value operator[](std::uint64_t index) const {
     return data_[index];
   }
 
 private:
-  using ContainerTp = std::array<Depth::Underlying<depth>, Color::ChannelCount<color>>; 
-
-  ContainerTp data_;
-
-  ContainerTp CreateData(Depth::Underlying<depth> value) {
-    ContainerTp data;
-    for (auto &channel : data) {
-      channel = value;
-    }
-    return data;
-  }
-};
-template <Depth::Tp depth, Color::Tp color>
-template <typename ElementTy>
-class Element<depth, color>::Iterator {
+  using Container = std::array<
+    Depth::Underlying   <DepthV>,
+    Color::ChannelCount <ColorV, AlphaSetting>
+  >;
 public:
-  explicit Iterator(ElementTy &container, std::uint64_t index) 
-    : container_ (container)
-    , index_     (index) {}
+  using Iterator      = typename Container::iterator;
+  using ConstIterator = typename Container::const_iterator;
 
-  std::conditional_t<!std::is_const_v<ElementTy>,
-          Depth::Underlying<depth> &,
-    const Depth::Underlying<depth> &>
-  operator*() const {
-    return container_[index_];
-  }
+  using RevIterator      = typename Container::reverse_iterator;
+  using ConstRevIterator = typename Container::const_reverse_iterator;
 
-  Iterator<ElementTy> &operator++() {
-    index_++;
-    return *this;
-  } 
-  Iterator<ElementTy> operator++(int) {
-    Iterator<ElementTy> temp(container_, index_);
-    operator++();
-    return temp;
+  auto Begin() {
+    return data_.begin();
   }
-
-  bool operator==(const Iterator<ElementTy> &other) const {
-    return index_ == other.index_;
+  auto Begin() const {
+    return data_.begin();
   }
-  bool operator!=(const Iterator<ElementTy> &other) const {
-    return !operator==(other);
+  auto ConstBegin() const {
+    return data_.cbegin();
   }
-
+  auto End() {
+    return data_.end();
+  }
+  auto End() const {
+    return data_.end();
+  }
+  auto ConstEnd() const {
+    return data_.cend();
+  }
+  auto RevBegin() {
+    return data_.rbegin();
+  }
+  auto RevBegin() const {
+    return data_.rbegin();
+  }
+  auto ConstRevBegin() const {
+    return data_.crbegin();
+  }
+  auto RevEnd() {
+    return data_.rend();
+  }
+  auto RevEnd() const {
+    return data_.rend();
+  }
+  auto ConstRevEnd() const {
+    return data_.crend();
+  }
 private:
-  ElementTy    &container_;
-  std::uint64_t index_;
+  Container data_;
+};
+template <Depth::Tp DepthV, 
+          Color::Tp ColorV,
+          bool AlphaSetting>
+auto begin(Element<DepthV, ColorV, AlphaSetting> &element) {
+  return element.Begin();
+}
+template <Depth::Tp DepthV, 
+          Color::Tp ColorV,
+          bool AlphaSetting>
+auto begin(const Element<DepthV, ColorV, AlphaSetting> &element) {
+  return element.Begin();
+}
+template <Depth::Tp DepthV, 
+          Color::Tp ColorV,
+          bool AlphaSetting>
+auto end(Element<DepthV, ColorV, AlphaSetting> &element) {
+  return element.End();
+}
+template <Depth::Tp DepthV, 
+          Color::Tp ColorV,
+          bool AlphaSetting>
+auto end(const Element<DepthV, ColorV, AlphaSetting> &element) {
+  return element.End();
+}
+
+template <Depth::Tp DepthV = DefDepth,
+          Color::Tp ColorV = DefColor>
+class AlphaElement : public Element<DepthV, ColorV, EnableAlpha> {
+public:
+  using Element<DepthV, ColorV, EnableAlpha>::Element;
 };
 
-template <Depth::Tp depth, Color::Tp color> 
-static typename Element<depth, color>::template Iterator<Element<depth, color>> begin(Element<depth, color> &element) {
-  return typename Element<depth, color>::template Iterator<Element<depth, color>>(element, 0);
 }
-template <Depth::Tp depth, Color::Tp color> 
-static typename Element<depth, color>::template Iterator<const Element<depth, color>> begin(const Element<depth, color> &element) {
-  return typename Element<depth, color>::template Iterator<const Element<depth, color>>(element, 0);
-}
-
-template <Depth::Tp depth, Color::Tp color> 
-static typename Element<depth, color>::template Iterator<Element<depth, color>> end(Element<depth, color> &element) {
-  return typename Element<depth, color>::template Iterator<Element<depth, color>>(element, element.channel_count);
-}
-template <Depth::Tp depth, Color::Tp color> 
-static typename Element<depth, color>::template Iterator<const Element<depth, color>> end(const Element<depth, color> &element) {
-  return typename Element<depth, color>::template Iterator<const Element<depth, color>>(element, element.channel_count);
-}
-};
