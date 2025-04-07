@@ -14,165 +14,169 @@ namespace Image {
 template <typename T>
 class ColorConvertor {
 public:
-
   static_assert(false);
 
   ColorConvertor(T) {}
-
-}; // ColorConvertor<T>
-
-template <Depth::Tp Dh, Color::Tp Cr>
-class ColorConvertor<Element<Dh, Cr>> {
+}; 
+template <Depth::Tp DepthV, 
+          Color::Tp ColorV,
+          bool AlphaSetting>
+class ColorConvertor<Element<DepthV, ColorV, AlphaSetting>> {
 private:
-  class Gray;
-  class CMYK;
+  using UsedElement = Element<DepthV, ColorV, AlphaSetting>;
 
-public:
-  ColorConvertor(const Element<Dh, Cr> &input) : input_(input) {}
+  template <Color::Tp CustomColorV>
+  using CustomElement = Element<DepthV, CustomColorV, AlphaSetting>;
 
-  template <Color::Tp OCr> 
-  std::conditional_t<Cr != OCr,
-          Element<Dh, OCr>,
-    const Element<Dh, OCr> &> 
-  Convert() {
-    if constexpr (Cr == OCr) {
-      return input_;
-    } else {
-      return ConvertFromRGB<OCr>(ConvertToRGB(input_));
-    }
-  }
+  using Value = typename UsedElement::Value;
 
-private:
-  const Element<Dh, Cr> &input_;
+  static constexpr Value Black = Depth::Min<DepthV>;
+  static constexpr Value White = Depth::Max<DepthV>;
 
-  static std::conditional_t<Cr != Color::RGB, 
-          Element<Dh, Color::RGB>,
-    const Element<Dh, Color::RGB> &>
-  ConvertToRGB(const Element<Dh, Cr> &input);
+  class Grayscale {
+  public:
+    static auto ConvertToRGB(const CustomElement<Color::Grayscale> &input) {
+      CustomElement<Color::RGB> output;
 
-  template <Color::Tp output_color>
-  static std::conditional_t<output_color != Color::RGB,
-          Element<Dh, output_color>,
-    const Element<Dh, output_color> &>
-  ConvertFromRGB(const Element<Dh, Color::RGB> &input);
+      output[0] = input[0];
+      output[1] = input[0];
+      output[2] = input[0];
 
-}; // ColorConvertor<Element<Dh, Cr>>
-
-template <Depth::Tp Dh, Color::Tp Cr>
-class ColorConvertor<Element<Dh, Cr>>::Gray {
-public:
-  static Element<Dh, Color::RGB> ConvertToRGB(const Element<Dh, Color::Grayscale> &input) {
-    Element<Dh, Color::RGB> output;
-    output[0] = input[0];
-    output[1] = input[0];
-    output[2] = input[0];
-    return std::move(output);
-  }
-  static Element<Dh, Color::Grayscale> ConvertFromRGB(const Element<Dh, Color::RGB> &input) {
-    Element<Dh, Color::Grayscale> output;
-    output[0] = 0.299 * input[0] + 
-                0.587 * input[1] + 
-                0.114 * input[2];
-    return std::move(output);
-  }
-}; // ColorConvertor<Element<Dh, Cr>>::Gray
-
-template <Depth::Tp Dh, Color::Tp Cr> 
-class ColorConvertor<Element<Dh, Cr>>::CMYK {
-public:
-  static Element<Dh, Color::RGB> ConvertToRGB(const Element<Dh, Color::CMYK> &input) {
-    Element<Dh, Color::RGB> output;
-    output[0] = ConvertChannelToRGB(input[0], input[3]);
-    output[1] = ConvertChannelToRGB(input[1], input[3]);
-    output[2] = ConvertChannelToRGB(input[2], input[3]);
-    return std::move(output);
-  }
-  static Element<Dh, Color::CMYK> ConvertFromRGB(const Element<Dh, Color::RGB> &input) {
-    Depth::Underlying<Dh> black = Depth::Max<Dh> - std::max<Depth::Underlying<Dh>>({
-      input[0],
-      input[1],
-      input[2]
-    });
-    Element<Dh, Color::CMYK> output;
-    if (black == Depth::Max<Dh>) {
-      output[0] = 0;
-      output[1] = 0;
-      output[2] = 0;
-    } else {
-      output[0] = ConvertChannelFromRGB(input[0], black);
-      output[1] = ConvertChannelFromRGB(input[1], black);
-      output[2] = ConvertChannelFromRGB(input[2], black);
-    }
-    output[3] = black;
-    return std::move(output);
-  }
-
-private:
-  static Depth::Underlying<Dh> ConvertChannelToRGB(Depth::Underlying<Dh> channel, Depth::Underlying<Dh> black) {
-    return (Depth::Max<Dh> - channel) * (Depth::Max<Dh> - black) / Depth::Max<Dh>;
-  }
-  static Depth::Underlying<Dh> ConvertChannelFromRGB(Depth::Underlying<Dh> channel, Depth::Underlying<Dh> black) {
-    return (Depth::Max<Dh> - channel - black) * Depth::Max<Dh> / (Depth::Max<Dh> - black);
-  }
-}; // ColorConvertor<Element<Dh, Cr>>::CMYK 
-
-template <Depth::Tp Dh, Color::Tp Cr>
-std::conditional_t<Cr != Color::RGB, 
-        Element<Dh, Color::RGB>,
-  const Element<Dh, Color::RGB> &>
-ColorConvertor<Element<Dh, Cr>>::ConvertToRGB(const Element<Dh, Cr> &input) {
-  if constexpr (Cr == Color::RGB) {
-    return input;
-  } else if constexpr (Cr == Color::Grayscale) {
-    return Gray::ConvertToRGB(input);
-  } else if constexpr (Cr == Color::CMYK) {
-    return CMYK::ConvertToRGB(input);
-  } else {
-    static_assert(false);
-  }
-}
-
-template <Depth::Tp Dh, Color::Tp Cr>
-template <Color::Tp OCr>
-std::conditional_t<OCr != Color::RGB,
-        Element<Dh, OCr>,
-  const Element<Dh, OCr> &>
-ColorConvertor<Element<Dh, Cr>>::ConvertFromRGB(const Element<Dh, Color::RGB> &input) {
-  if constexpr (OCr == Color::RGB) {
-    return input;
-  } else if constexpr (OCr == Color::Grayscale) {
-    return Gray::ConvertFromRGB(input);
-  } else if constexpr (OCr == Color::CMYK) {
-    return CMYK::ConvertFromRGB(input);
-  } else {
-    static_assert(false);
-  }
-}
-
-template <Depth::Tp Dh, Color::Tp Cr>
-class ColorConvertor<Buffer<Dh, Cr>> {
-public:
-  ColorConvertor(const Buffer<Dh, Cr> &input) : input_(input) {}
-
-  template <Color::Tp OCr> 
-  std::conditional_t<Cr != OCr,
-          Buffer<Dh, OCr>,
-    const Buffer<Dh, OCr> &>
-  Convert() {
-    if constexpr (Cr == OCr) {
-      return input_;
-    } else {
-      Buffer<Dh, OCr> output(input_.GetRCount(), input_.GetCCount());
-      auto iterator = begin(input_);
-      for (auto &element : output) {
-        element = Image::ColorConvertor(*iterator++).template Convert<OCr>();
+      if constexpr (UsedElement::AlphaEnabled) {
+        output[3] = input[1];
       }
-      return std::move(output);
+      return output;
+    }
+    static auto ConvertFromRGB(const CustomElement<Color::RGB> &input) {
+      CustomElement<Color::Grayscale> output;
+
+      output[0] = 0.299 * input[0] + 
+                  0.587 * input[1] + 
+                  0.114 * input[2];
+
+      if constexpr (UsedElement::AlphaEnabled) {
+        output[1] = input[3];
+      }
+      return output;
+    }
+  };
+  class CMYK {
+  public:
+    static auto ConvertToRGB(const CustomElement<Color::CMYK> &input) {
+      CustomElement<Color::RGB> output;
+
+      output[0] = ConvertChannelToRGB(input[0], input[3]);
+      output[1] = ConvertChannelToRGB(input[1], input[3]);
+      output[2] = ConvertChannelToRGB(input[2], input[3]);
+
+      if constexpr (UsedElement::AlphaEnabled) {
+        output[3] = input[4];
+      }
+      return output;
+    }
+    static auto ConvertFromRGB(const CustomElement<Color::RGB> &input) {
+      Value black = White - std::max<Value>({
+        input[0],
+        input[1],
+        input[2]
+      });
+      CustomElement<Color::CMYK> output;
+      if (black == White) {
+        output[0] = Black;
+        output[1] = Black;
+        output[2] = Black;
+      } else {
+        output[0] = ConvertChannelFromRGB(input[0], black);
+        output[1] = ConvertChannelFromRGB(input[1], black);
+        output[2] = ConvertChannelFromRGB(input[2], black);
+      }
+      output[3] = black;
+
+      if constexpr (UsedElement::AlphaEnabled) {
+        output[4] = input[3];
+      }
+      return output;
+    }
+  private:
+    static Value ConvertChannelToRGB(Value channel, Value black) {
+      return (White - channel) * (White - black) / White;
+    }
+    static Value ConvertChannelFromRGB(Value channel, Value black) {
+      return (White - channel - black) * White / (White - black);
+    }
+  };
+public:
+  ColorConvertor(const UsedElement &input) : input_(input) {}
+
+  template <Color::Tp OutputColorV>
+  constexpr bool ConversionNeeded() {
+    return ColorV != OutputColorV;
+  }
+  template <Color::Tp OutputColorV> 
+  decltype(auto) Convert() {
+    if constexpr (ColorV == OutputColorV) {
+      return input_;
+    } else {
+      return ConvertFromRGB<OutputColorV>(ConvertToRGB(input_));
     }
   }
-
 private:
-  const Buffer<Dh, Cr> &input_;
+  const UsedElement &input_;
 
-}; // ColorConvertor<Buffer<Dh, Cr>>
-}; // Image
+  decltype(auto) ConvertToRGB(const UsedElement &input) {
+    if constexpr (ColorV == Color::RGB) {
+      return input;
+    } else if constexpr (ColorV == Color::Grayscale) {
+      return Grayscale::ConvertToRGB(input);
+    } else if constexpr (ColorV == Color::CMYK) {
+      return CMYK::ConvertToRGB(input);
+    } else {
+      static_assert(false);
+    }
+  }
+  template <Color::Tp OutputColorV>
+  decltype(auto) ConvertFromRGB(const CustomElement<Color::RGB> &input) {
+    if constexpr (OutputColorV == Color::RGB) {
+      return input_;
+    } else if constexpr (OutputColorV == Color::Grayscale) {
+      return Grayscale::ConvertFromRGB(input);
+    } else if constexpr (OutputColorV == Color::CMYK) {
+      return CMYK::ConvertFromRGB(input);
+    } else {
+      static_assert(false);
+    }
+  }
+};
+template <Depth::Tp DepthV,
+          Color::Tp ColorV,
+          bool AlphaSetting>
+class ColorConvertor<Buffer<DepthV, ColorV, AlphaSetting>> {
+public:
+  template <Color::Tp CustomColorV>
+  using CustomBuffer = Buffer<DepthV, CustomColorV, AlphaSetting>;
+
+  using UsedBuffer = CustomBuffer<ColorV>;
+
+  ColorConvertor(const UsedBuffer &input) : input_(input) {}
+
+  template <Color::Tp OutputColorV> 
+  decltype(auto) Convert() {
+    if constexpr (ColorV == OutputColorV) {
+      return input_;
+    } else {
+      CustomBuffer<OutputColorV> output(
+        input_.GetRowCount    (), 
+        input_.GetColumnCount ()
+      );
+      for (auto index = 0u;
+                index < output.GetLength();
+                index++) {
+        output[index] = Image::ColorConvertor(input_[index]).template Convert<OutputColorV>();
+      }
+      return output;
+    }
+  }
+private:
+  const UsedBuffer &input_;
+};
+};
