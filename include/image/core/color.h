@@ -13,7 +13,7 @@ public:
     CMYK,
     Multichannel,
     Duotone,
-    Lab
+    Lab,
   };
 
 private:
@@ -21,8 +21,12 @@ private:
   struct ChannelCountS;
 
 public:
-  template <Tp V>
-  static constexpr std::uint64_t ChannelCount = ChannelCountS<V>::value;
+  static constexpr std::uint64_t AlphaChannel = 1;
+
+  template <Tp Value, bool AlphaSetting>
+  static constexpr std::uint64_t ChannelCount = AlphaSetting 
+    ? ChannelCountS<Value>::value + AlphaChannel
+    : ChannelCountS<Value>::value;
 };
 
 template <>
@@ -39,5 +43,8 @@ template <>
 struct Color::ChannelCountS<Color::CMYK> {
   static constexpr std::uint64_t value = 4;
 };
+
+static constexpr Color::Tp DefColor = Color::RGB;
+
 };
 
