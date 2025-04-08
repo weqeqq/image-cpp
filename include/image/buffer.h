@@ -26,7 +26,7 @@ public:
 
   using UsedElement = Element<DepthV, ColorV, AlphaSetting>;
 
-  static constexpr std::uint64_t ByteCountInElement = UsedElement::BCount;
+  static constexpr std::uint64_t ByteCountInElement = UsedElement::ByteCount;
 
   using Container = std::vector<UsedElement>;
 
