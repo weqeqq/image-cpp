@@ -3,15 +3,13 @@
 #include <filesystem>
 
 namespace Image {
-
 class Format {
 public:
   enum Tp {
     PNG,
     JPEG,
-    Undefined
+    WebP,
   };
-
   static Tp FromPath(std::filesystem::path path) {
     std::string extension = path.extension().string();
 
@@ -20,6 +18,9 @@ public:
     } 
     if (extension == ".jpeg" || extension == ".jpg") {
       return JPEG;
+    }
+    if (extension == ".webp") {
+      return WebP;
     }
     throw std::runtime_error("undefined file format");
   }
@@ -30,5 +31,4 @@ public:
     return FromPath(std::filesystem::path(path));
   }
 };
-
-}; // Image
+}; 
