@@ -10,85 +10,73 @@
 #include <image/convertor/depth.h>
 #include <image/convertor/endianness.h>
 #include <image/convertor/color.h>
+#include <image/convertor/data.h>
 
 #include <vector>
 #include <type_traits>
 
 namespace Image {
 
-template <typename T>
+using Sequence = std::vector<uint8_t>;
+
+template <typename InputT>
 class SequenceConvertor {
 public:
   static_assert(false);
 
-  SequenceConvertor(T) {}
+  SequenceConvertor(InputT)         {}
+  SequenceConvertor(InputT, InputT) {}
+};
 
-  SequenceConvertor(T, T) {};
-
-}; // SequenceConvertor<T>
-
-template <Depth::Tp Dh, Color::Tp Cr>
-class SequenceConvertor<Buffer<Dh, Cr>> {
+template <Depth::Tp DepthV,
+          Color::Tp ColorV,
+          bool AlphaSetting>
+class SequenceConvertor<Buffer<DepthV, ColorV, AlphaSetting>> {
 public:
 
-  using InputTp  = Buffer<Dh, Cr>;
-  using AlphaTp  = Buffer<Dh, Color::Grayscale>;
-  using OutputTp = std::vector<std::uint8_t>;
+  using UsedBuffer  = Buffer  <DepthV, ColorV, AlphaSetting>;
+  using UsedElement = Element <DepthV, ColorV, AlphaSetting>;
 
-  SequenceConvertor(const InputTp &input) : input_(input) {}
+  using Value = typename UsedElement::Value;
 
-  template <Endianness::Tp Es = Endianness::Determine()>
-  OutputTp ToSequence() const {
-    OutputTp output;
+  SequenceConvertor(const UsedBuffer &input) : input_(input) {}
+
+  template <Endianness::Tp EndiannessV = Endianness::Determine()>
+  auto Convert() const {
+    Sequence output;
     output.reserve(input_.GetBCount());
 
     for (const auto &element : input_) {
-      PushElement<Es>(output, element);
+      PushElement<EndiannessV>(output, element);
     }
-    /* return std::move(output) */
     return output;
   }
-  template <Endianness::Tp Es = Endianness::Determine()>
-  OutputTp ToSequence(const AlphaTp &alpha) const {
-    OutputTp output;  
-    output.reserve(input_.GetBCount() + alpha.GetBCount());
-
-    auto alpha_iterator = begin(alpha);
-
-    for (const auto &element : input_) {
-      PushElement<Es>(output,   element);
-      PushChannel<Es>(output, **alpha_iterator++);
-    }
-    /*return std::move(output);*/
-    return output;
-  }
-
 private:
-  const InputTp &input_;
+  const UsedBuffer &input_;
 
-  template <Endianness::Tp Es>
-  static void PushElement(OutputTp &output, const Element<Dh, Cr> &element) {
-    if constexpr (Cr == Color::Grayscale) {
-      PushChannel<Es>(output, *element);
+  template <Endianness::Tp EndiannessV>
+  static void PushElement(Sequence &output, const UsedElement &element) {
+    if constexpr (ColorV == Color::Grayscale) {
+      PushChannel<EndiannessV>(output, static_cast<Value>(element));
     } else {
       for (auto channel : element) {
-        PushChannel<Es>(output, channel);
+        PushChannel<EndiannessV>(output, channel);
       }
     }
   }
-  template <Endianness::Tp Es>
-  static void PushChannel(OutputTp &output, Depth::Underlying<Dh> channel) {
-    if constexpr (Dh == Depth::Eight) {
+  template <Endianness::Tp EndiannessV>
+  static void PushChannel(Sequence &output, Value channel) {
+    if constexpr (DepthV == Depth::Eight) {
       output.push_back(channel);
     } else {
-      if constexpr (Endianness::Determine() == Es) {
+      if constexpr (Endianness::Determine() == EndiannessV) {
         for (auto index = 0u; 
-                  index < Depth::Length<Dh>;
+                  index < Depth::Length<DepthV>;
                   index++) {
           output.push_back(reinterpret_cast<std::uint8_t *>(&channel)[index]);
         }
       } else {
-        for (auto index = std::int64_t(Depth::Length<Dh> - 1);
+        for (auto index = std::int64_t(Depth::Length<DepthV> - 1);
                   index >= 0;
                   index--) {
           output.push_back(reinterpret_cast<std::uint8_t *>(&channel)[index]);
@@ -96,64 +84,52 @@ private:
       }
     }
   }
-}; // SequenceConvertor<Buffer<depth, color>>
+};
 
 template <>
-class SequenceConvertor<std::vector<std::uint8_t>::const_iterator> {
+class SequenceConvertor<Sequence::const_iterator> {
 public:
 
-  using IteratorTp = std::vector<std::uint8_t>::const_iterator;
+  using Iterator = Sequence::const_iterator;
 
-  SequenceConvertor(IteratorTp begin, IteratorTp end) : begin_(begin), end_(end) {}
+  SequenceConvertor(Iterator begin, Iterator end) : begin_(begin), end_(end) {}
 
-  template <Depth::Tp Dh, Color::Tp Cr, Endianness::Tp Es = Endianness::Determine()>
-  Buffer<Dh, Cr> ToBuffer(std::uint32_t row_count, std::uint32_t column_count) const {
-    Buffer<Dh, Cr> output(row_count, column_count);
+  template <Depth::Tp DepthV, 
+            Color::Tp ColorV,
+            bool AlphaSetting, 
+            Endianness::Tp EndiannessV = Endianness::Determine()>
+  auto Convert(
+    std::uint32_t row_count, 
+    std::uint32_t column_count
+  ) const {
+    Buffer<DepthV, ColorV, AlphaSetting> output(row_count, column_count);
 
     auto iterator = begin_;
 
     for (auto &element : output) {
-      element = ElementFrom<Dh, Cr, Es>(
-        iterator  - element.BCount,
-        iterator += element.BCount
+      element = ElementFrom<DepthV, ColorV, AlphaSetting, EndiannessV>(
+        iterator  - element.ByteCount,
+        iterator += element.ByteCount
       );
     }
-    return std::move(output);
+    return output;
   }
-
-  template <Depth::Tp Dh, Color::Tp Cr, Endianness::Tp Es = Endianness::Determine()>
-  Buffer<Dh, Cr> ToBuffer(std::uint32_t row_count, std::uint32_t column_count, Buffer<Dh, Color::Grayscale> &alpha) const {
-    Buffer<Dh, Color::RGB> output(row_count, column_count);
-
-    alpha = Buffer<Dh, Color::Grayscale>(row_count, column_count);
-
-    auto iterator       = begin_;
-    auto alpha_iterator = begin(alpha);
-
-    for (auto &element : output) {
-      element = ElementFrom<Dh, Cr, Es>(
-        iterator  - element.BCount,
-        iterator += element.BCount
-      );
-      **alpha_iterator++ = ChannelFrom<Dh, Es>(
-        iterator  - alpha.ElementBCount,
-        iterator += alpha.ElementBCount
-      );
-    }
-    if constexpr (Cr == Color::RGB) {
-      return std::move(output);
-    } else {
-      return ColorConvertor(output).template Convert<Cr>();
-    }
-  }
-  template <Depth::Tp Dh, Color::Tp Cr, Endianness::Tp Es = Endianness::Determine()> 
-  Buffer<Dh, Cr> ToBuffer(std::uint32_t row_count, std::uint32_t column_count, Depth::Tp depth, Color::Tp color) const {
-    auto Convert = [](auto buffer) {
-      return DepthConvertor(ColorConvertor(buffer).template Convert<Cr>()).template Convert<Dh>();
-    };
-    #define CONVERT(Dh, Cr) \
-      if (depth == Dh && color == Cr) {\
-        return Convert(ToBuffer<Dh, Cr, Es>(row_count, column_count)); \
+  template <Depth::Tp DepthV, 
+            Color::Tp ColorV,
+            bool AlphaSetting, 
+            Endianness::Tp EndiannessV = Endianness::Determine()> 
+  auto Convert(
+    std::uint32_t row_count, 
+    std::uint32_t column_count, 
+    Depth::Tp depth, 
+    Color::Tp color
+  ) const {
+    #define CONVERT(InputDepthV, InputColorV)                                         \
+      if (depth == InputDepthV && color == InputColorV) {                             \
+        return DataConvertor(Convert<                                                 \
+          InputDepthV,                                                                \
+          InputColorV,                                                                \
+          AlphaSetting>(row_count, column_count)).template Convert<DepthV, ColorV>(); \
       }
     CONVERT(Depth::Eight     , Color::RGB);
     CONVERT(Depth::Sixteen   , Color::RGB);
@@ -170,24 +146,24 @@ public:
   }
 
 public:
-  IteratorTp begin_;
-  IteratorTp end_;
+  Iterator begin_;
+  Iterator end_;
 
-  template <Depth::Tp Dh, Endianness::Tp Es>
-  static Depth::Underlying<Dh> ChannelFrom(IteratorTp iterator, IteratorTp end) {
-    Depth::Underlying<Dh> output;
+  template <Depth::Tp DepthV, Endianness::Tp EndiannessV>
+  static auto ChannelFrom(Iterator iterator, Iterator end) {
+    Depth::Underlying<DepthV> output;
     
-    if constexpr (Dh == Depth::Eight) {
+    if constexpr (DepthV == Depth::Eight) {
       output = *iterator;
     } else {
-      if constexpr (Endianness::Determine() == Es) {
+      if constexpr (Endianness::Determine() == EndiannessV) {
         for (auto index = 0u; 
-                  index < Depth::Length<Dh>;
+                  index < Depth::Length<DepthV>;
                   index++) {
           reinterpret_cast<std::uint8_t *>(&output)[index] = *iterator++; 
         }
       } else {
-        for (auto index = Depth::Length<Dh>;
+        for (auto index = Depth::Length<DepthV>;
                   index >= 0u;
                   index--) {
           reinterpret_cast<std::uint8_t *>(&output)[index] = *iterator++; 
@@ -196,54 +172,38 @@ public:
     }
     return output;
   }
+  template <Depth::Tp DepthV, Color::Tp ColorV, bool AlphaSetting, Endianness::Tp EndiannessV> 
+  static auto ElementFrom(Iterator iterator, Iterator end) {
+    Element<DepthV, ColorV, AlphaSetting> output;
 
-  template <Depth::Tp Dh, Color::Tp Cr, Endianness::Tp Es> 
-  static Element<Dh, Cr> ElementFrom(IteratorTp iterator, IteratorTp end) {
-    Element<Dh, Cr> output;
-
-    if constexpr (Cr == Color::Grayscale) {
-      *output = ChannelFrom<Dh, Es>(
-        iterator  - Depth::Length<Dh>,
-        iterator += Depth::Length<Dh>
+    for (decltype(auto) channel : output) {
+      channel = ChannelFrom<DepthV, EndiannessV>(
+        iterator  - Depth::Length<DepthV>,
+        iterator += Depth::Length<DepthV>
       );
-    } else {
-      for (auto &channel : output) {
-        channel = ChannelFrom<Dh, Es>(
-          iterator  - Depth::Length<Dh>,
-          iterator += Depth::Length<Dh>
-        );
-      }
     }
-    return std::move(output);
+    return output;
   }
-}; // SequenceConvertor<std::vector<std::uint8_t>::const_iterator>
-
+};
 template <>
-class SequenceConvertor<std::vector<std::uint8_t>> {
+class SequenceConvertor<Sequence> {
 public:
+  SequenceConvertor(const Sequence &input) : input_(input) {}
 
-  using InputTp = std::vector<std::uint8_t>;
-
-  SequenceConvertor(const InputTp &input) : input_(input) {}
-
-  template <Depth::Tp Dh, Color::Tp Cr, Endianness::Tp Es = Endianness::Determine()> 
-  Buffer<Dh, Cr> ToBuffer(std::uint32_t row_count, std::uint32_t column_count) const {
+  template <Depth::Tp DepthV, 
+            Color::Tp ColorV,
+            bool AlphaSetting,
+            Endianness::Tp EndiannessV = Endianness::Determine()> 
+  auto Convert(
+    std::uint32_t row_count, 
+    std::uint32_t column_count
+  ) const {
     return Image::SequenceConvertor(
-      input_.cbegin(),
-      input_.cend()
-    ).template ToBuffer<Dh, Cr, Es>(row_count, column_count);
+      input_.cbegin (),
+      input_.cend   ()
+    ).template Convert<DepthV, ColorV, AlphaSetting, EndiannessV>(row_count, column_count);
   }
-
-  template <Depth::Tp Dh, Color::Tp Cr, Endianness::Tp Es = Endianness::Determine()> 
-  Buffer<Dh, Cr> ToBuffer(std::uint32_t row_count, std::uint32_t column_count, Buffer<Dh, Color::Grayscale> &alpha) const {
-    return Image::SequenceConvertor(
-      input_.cbegin(),
-      input_.cend()
-    ).template ToBuffer<Dh, Cr, Es>(row_count, column_count, alpha);
-  }
-
 private:
-  const InputTp &input_;
-
-}; // SequenceConvertor<std::vector<std::uint8_t>>
-}; // Image
+  const Sequence &input_;
+}; 
+};
