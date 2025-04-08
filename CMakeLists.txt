@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.23)
 
-project(image LANGUAGES CXX VERSION 0.1.0)
+project(image LANGUAGES C CXX VERSION 0.1.0)
 
 include(cmake/fpng-target.cmake)
 include(cmake/jpeg-turbo-target.cmake)
@@ -10,10 +10,11 @@ add_library(image)
 add_library(image::image ALIAS image)
 
 target_sources(image PRIVATE 
-  source/decoder/png.cc
-  # source/decoder/jpeg.cc
-  source/encoder/png.cc
-  # source/encoder/jpeg.cc
+  source/decode_impl/png.cc
+  source/encode_impl/png.cc
+  source/capi/buffer.cc
+  source/capi/decode.cc
+  source/capi/encode.cc
 )
 
 target_sources(image PUBLIC 
@@ -31,9 +32,9 @@ target_sources(image PUBLIC
   include/image/core/format.h 
   include/image/processing/blend.h
   include/image/buffer.h 
-  include/image/decoder.h 
+  include/image/decode.h 
   include/image/element.h 
-  include/image/encoder.h)
+  include/image/encode.h)
 
 target_link_libraries(image PRIVATE
   fpng
