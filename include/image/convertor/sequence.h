@@ -44,7 +44,7 @@ public:
   template <Endianness::Tp EndiannessV = Endianness::Determine()>
   auto Convert() const {
     Sequence output;
-    output.reserve(input_.GetBCount());
+    output.reserve(input_.GetByteCount());
 
     for (const auto &element : input_) {
       PushElement<EndiannessV>(output, element);
