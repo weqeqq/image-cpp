@@ -43,174 +43,158 @@ public:
 
 namespace Processing {
   
-template <Depth::Tp DepthV, Color::Tp ColorV>
+template <Depth::Tp DepthV, 
+          Color::Tp ColorV,
+          bool AlphaSetting>
 class BlendClass {
 public:
 
-  using ElementTp      = Element<DepthV, ColorV>;
-  using AlphaElementTp = Element<DepthV, Color::Grayscale>;
-  using BufferTp       = Buffer<DepthV, ColorV>;
-  using AlphaTp        = Buffer<DepthV, Color::Grayscale>;
+  using UsedBuffer  = Buffer  <DepthV, ColorV, AlphaSetting>;
+  using UsedElement = Element <DepthV, ColorV, AlphaSetting>;
 
-  struct Output {
-    BufferTp buffer;
-    AlphaTp  alpha;
-  };
+  using Value = typename UsedElement::Value;
 
-  const BufferTp &background,        &foreground;
-  const AlphaTp  &background_alpha,  &foreground_alpha;
+  static constexpr Value Max = Depth::Max<DepthV>;
+  static constexpr Value Min = Depth::Min<DepthV>;
+
+  UsedBuffer &background; const UsedBuffer &foreground;
 
   std::uint64_t x_offset = 0;
   std::uint64_t y_offset = 0;
 
   Blending::Tp blending = Blending::Normal;
 
-  Output Process() const {
-    Output output;
-    output.buffer = background;
-    output.alpha  = background_alpha;
-
+  decltype(auto) Process() const {
     for (auto bg_row = y_offset; 
-              bg_row < y_offset + foreground.GetRCount();
+              bg_row < y_offset + foreground.GetRowCount();
               bg_row++) {
       for (auto bg_column = x_offset; 
-                bg_column < x_offset + foreground.GetCCount();
+                bg_column < x_offset + foreground.GetColumnCount();
                 bg_column++) {
 
         auto fg_row    = bg_row    - y_offset;
         auto fg_column = bg_column - x_offset;
 
-        output.buffer(bg_row, bg_column) = BlendAlpha(
-          background(bg_row, bg_column),
-          BlendElement(
-            background(bg_row, bg_column),
-            foreground(fg_row, fg_column),
-            foreground_alpha(fg_row, fg_column),
+        decltype(auto) background_element = background(bg_row, bg_column);
+        decltype(auto) foreground_element = foreground(fg_row, fg_column);
+
+        auto tmp = background_element;
+
+        BlendAlpha(background_element, BlendElement(
+            tmp,
+            foreground_element,
             blending
-          ),
-          foreground_alpha(fg_row, fg_column)
-        );
-        output.alpha(bg_row, bg_column) = std::max(
-          *background_alpha(bg_row, bg_column), 
-          *foreground_alpha(fg_row, fg_column)
-        );
+        ));
       }
     }
-    return output;
+    return background;
   }
 
 private:
 
-  ElementTp BlendAlpha(
-    const ElementTp      &background,
-    const ElementTp      &foreground,
-    const AlphaElementTp &alpha
+  decltype(auto) BlendAlpha(
+    UsedElement &background, const UsedElement &foreground
   ) const {
-    ElementTp output;
-    float     alphaf = static_cast<float>(*alpha) / Depth::Max<DepthV>;
-
-    for (auto index = 0u;
-              index < Color::ChannelCount<ColorV>;
-              index++) {
-      output[index] = 
-        (background[index] * (1.0f - alphaf)) + 
-        (foreground[index] * (       alphaf));
+    if constexpr (AlphaSetting == EnableAlpha) {
+      float alpha = static_cast<float>(foreground[Color::AlphaIndex<ColorV>]) / Max;
+      for (auto index = 0u;
+                index < Color::ChannelCount<ColorV, DisableAlpha>;
+                index++) {
+        background[index] = 
+          (background[index] * (1.0f - alpha)) + 
+          (foreground[index] * (       alpha));
+      }
+      background[Color::AlphaIndex<ColorV>] = std::max(
+        background[Color::AlphaIndex<ColorV>],
+        foreground[Color::AlphaIndex<ColorV>]
+      );
     }
-    return output;
+    return background;
   }
 
-  ElementTp BlendNormal(
-    const ElementTp &background,
-    const ElementTp &foreground
+  decltype(auto) BlendNormal(
+    UsedElement &background, const UsedElement &foreground
   ) const {
-    return foreground;
+    background = foreground;
+    return background;
   }
 
-  ElementTp BlendDissolve(
-    const ElementTp &background,
-    const ElementTp &foreground,
-    const AlphaElementTp &alpha
+  decltype(auto) BlendDissolve(
+    UsedElement &background, const UsedElement &foreground
   ) const {
     static bool initialized = false;
 
     if (!initialized) {
       std::srand(std::time(0)); initialized = true;
     }
-    auto random = static_cast<Depth::Underlying<DepthV>>(
-      (static_cast<float>(std::rand()) / RAND_MAX) * Depth::Max<DepthV>
+    auto random = static_cast<Value>(
+      (static_cast<double>(std::rand()) / RAND_MAX) * Max
     );
-    if (random < *alpha) {
-      return foreground;
+    if constexpr (AlphaSetting == EnableAlpha) {
+
+      if (random < foreground[Color::AlphaIndex<ColorV>]) {
+        background = foreground;
+      }
     }
     return background;
   }
 
-  ElementTp BlendDarken(
-    const ElementTp &background,
-    const ElementTp &foreground
+  decltype(auto) BlendDarken(
+    UsedElement &background, const UsedElement &foreground
   ) const {
-    ElementTp output;
     for (auto index = 0u;
-              index < Color::ChannelCount<ColorV>;
+              index < Color::ChannelCount<ColorV, DisableAlpha>;
               index++) {
-      output[index] = std::min(background[index], foreground[index]);
+      background[index] = std::min(background[index], foreground[index]);
     }
-    return output;
+    return background;
   }
 
-  ElementTp BlendMultiply(
-    const ElementTp &background,
-    const ElementTp &foreground
+  decltype(auto) BlendMultiply(
+    UsedElement &background, const UsedElement &foreground
   ) const {
-    ElementTp output;
     for (auto index = 0u;
-              index < Color::ChannelCount<ColorV>;
+              index < Color::ChannelCount<ColorV, DisableAlpha>;
               index++) {
-      output[index] = background[index] * foreground[index] / 255;
+      background[index] = background[index] * foreground[index] / Max;
     }
-    return output;
+    return background;
   }
 
-  ElementTp BlendColorBurn(
-    const ElementTp &background,
-    const ElementTp &foreground
+  decltype(auto) BlendColorBurn(
+    UsedElement &background, const UsedElement &foreground
   ) const {
-    ElementTp output;
     for (auto index = 0u;
-              index < Color::ChannelCount<ColorV>;
+              index < Color::ChannelCount<ColorV, DisableAlpha>;
               index++) {
       if (!foreground[index]) {
-        output[index] = 0;
+        background[index] = 0;
         continue;
       } 
-      auto max  = Depth::Max<DepthV>;
-      auto temp = static_cast<std::uint64_t>(max - background[index]) * max / foreground[index];
-      output[index] = (temp > max) 
+      auto temp = static_cast<std::uint64_t>(Max - background[index]) * Max / foreground[index];
+      background[index] = (temp > Max) 
          ? 0 
-         : max - temp;
+         : Max - temp;
     }
-    return output;
+    return background;
   }
 
-  ElementTp BlendLinearBurn(
-    const ElementTp &background,
-    const ElementTp &foreground
+  decltype(auto) BlendLinearBurn(
+    UsedElement &background, const UsedElement &foreground
   ) const {
-    ElementTp output;
     for (auto index = 0u;
-              index < Color::ChannelCount<ColorV>;
+              index < Color::ChannelCount<ColorV, DisableAlpha>;
               index++) {
-      output[index] = std::max<std::int64_t>(
+      background[index] = std::max<std::int64_t>(
         0l,
         static_cast<std::int64_t>(background[index]) + 
-        static_cast<std::int64_t>(foreground[index]) - Depth::Max<DepthV>);
+        static_cast<std::int64_t>(foreground[index]) - Max);
     }
-    return output;
+    return background;
   }
 
-  ElementTp BlendDarkerColor(
-    const ElementTp &background,
-    const ElementTp &foreground
+  decltype(auto) BlendDarkerColor(
+    UsedElement &background, const UsedElement &foreground
   ) const {
     auto CalculateLuminance = [](const auto &color) {
       auto Normalize = [](const auto &value) {
@@ -221,77 +205,64 @@ private:
              0.587f * Normalize(rgb[1]) +
              0.114f * Normalize(rgb[2]);
     };
-    return CalculateLuminance(background) > CalculateLuminance(foreground)
-      ? foreground 
-      : background;
+    if (CalculateLuminance(background) > CalculateLuminance(foreground)) {
+      background = foreground;
+    }
+    return background;
   }
 
-  ElementTp BlendLighten(
-    const ElementTp &background,
-    const ElementTp &foreground
+  decltype(auto) BlendLighten(
+    UsedElement &background, const UsedElement &foreground
   ) const {
-    ElementTp output;
     for (auto index = 0u;
-              index < Color::ChannelCount<ColorV>;
+              index < Color::ChannelCount<ColorV, DisableAlpha>;
               index++) {
-      output[index] = std::max(background[index], foreground[index]);
+      background[index] = std::max(background[index], foreground[index]);
     }
-    return output;
+    return background;
   }
 
-  ElementTp BlendScreen(
-    const ElementTp &background,
-    const ElementTp &foreground
+  decltype(auto) BlendScreen(
+    UsedElement &background, const UsedElement &foreground
   ) const {
-    ElementTp output;
     for (auto index = 0u;
-              index < Color::ChannelCount<ColorV>;
+              index < Color::ChannelCount<ColorV, DisableAlpha>;
               index++) {
-      auto max = Depth::Max<DepthV>;
-      output[index] = max - ((max - background[index]) * (max - foreground[index])) / max;
+      background[index] = Max - ((Max - background[index]) * (Max - foreground[index])) / Max;
     }
-    return output;
+    return background;
   }
 
-  ElementTp BlendColorDodge(
-    const ElementTp &background,
-    const ElementTp &foreground
+  decltype(auto) BlendColorDodge(
+    UsedElement &background, const UsedElement &foreground
   ) const {
-    ElementTp output;
-
-    auto max = Depth::Max<DepthV>;
     for (auto index = 0u;
-              index < Color::ChannelCount<ColorV>;
+              index < Color::ChannelCount<ColorV, DisableAlpha>;
               index++) {
-      output[index] = (foreground[index] == max)
-        ? max
-        : std::min<std::uint64_t>(max, (background[index] * max) / (max - foreground[index]));
+      background[index] = (foreground[index] == Max)
+        ? Max
+        : std::min<std::uint64_t>(Max, (background[index] * Max) / (Max - foreground[index]));
     }
-    return output;
+    return background;
   } 
 
-  ElementTp BlendLinearDodge(
-    const ElementTp &background,
-    const ElementTp &foreground
+  decltype(auto) BlendLinearDodge(
+    UsedElement &background, const UsedElement &foreground
   ) const {
-    ElementTp output;
-
-    auto max = Depth::Max<DepthV>;
     for (auto index = 0u;
-              index < Color::ChannelCount<ColorV>;
+              index < Color::ChannelCount<ColorV, DisableAlpha>;
               index++) {
-      output[index] = std::min<std::uint64_t>(
-        max, 
+      background[index] = std::min<std::uint64_t>(
+        Max, 
         static_cast<std::uint64_t>(background[index]) +
         static_cast<std::uint64_t>(foreground[index])
       );
     }
-    return output;
+    return background;
   }
 
-  ElementTp BlendLighterColor(
-    const ElementTp &background,
-    const ElementTp &foreground
+  decltype(auto) BlendLighterColor(
+    UsedElement &background, const UsedElement &foreground
   ) const {
     auto CalculateLuminance = [](const auto &color) {
       auto Normalize = [](const auto &value) {
@@ -302,79 +273,51 @@ private:
              0.587f * Normalize(rgb[1]) +
              0.114f * Normalize(rgb[2]);
     };
-    return CalculateLuminance(background) < CalculateLuminance(foreground)
-      ? foreground 
-      : background;
+    if (CalculateLuminance(background) < CalculateLuminance(foreground)) {
+      background = foreground;
+    }
+    return background;
   }
 
-  ElementTp BlendElement(
-    const ElementTp &background,
-    const ElementTp &foreground,
-    const AlphaElementTp &alpha,
-    Blending::Tp blending
+  decltype(auto) BlendElement(
+    UsedElement &background, const UsedElement &foreground, Blending::Tp blending
   ) const {
-    ElementTp output;
-
     switch (blending) {
-      case Blending::Normal       : return BlendNormal      (background, foreground);
-      case Blending::Dissolve     : return BlendDissolve    (background, foreground, alpha);
-      case Blending::Darken       : return BlendDarken      (background, foreground);
-      case Blending::Multiply     : return BlendMultiply    (background, foreground);
-      case Blending::ColorBurn    : return BlendColorBurn   (background, foreground);
-      case Blending::LinearBurn   : return BlendLinearBurn  (background, foreground);
-      case Blending::DarkerColor  : return BlendDarkerColor (background, foreground);
-      case Blending::Lighten      : return BlendLighten     (background, foreground);
-      case Blending::Screen       : return BlendScreen      (background, foreground);
-      case Blending::ColorDodge   : return BlendColorDodge  (background, foreground);
-      case Blending::LinearDodge  : return BlendLinearDodge (background, foreground);
-      case Blending::LighterColor : return BlendLighterColor(background, foreground);
+      case Blending::Normal       : return BlendNormal       (background, foreground);
+      case Blending::Dissolve     : return BlendDissolve     (background, foreground);
+      case Blending::Darken       : return BlendDarken       (background, foreground);
+      case Blending::Multiply     : return BlendMultiply     (background, foreground);
+      case Blending::ColorBurn    : return BlendColorBurn    (background, foreground);
+      case Blending::LinearBurn   : return BlendLinearBurn   (background, foreground);
+      case Blending::DarkerColor  : return BlendDarkerColor  (background, foreground);
+      case Blending::Lighten      : return BlendLighten      (background, foreground);
+      case Blending::Screen       : return BlendScreen       (background, foreground);
+      case Blending::ColorDodge   : return BlendColorDodge   (background, foreground);
+      case Blending::LinearDodge  : return BlendLinearDodge  (background, foreground);
+      case Blending::LighterColor : return BlendLighterColor (background, foreground);
       default: {
         throw std::runtime_error("blerr");
       }
     }
-    return output;
   }
-
 };
 }; 
-template <Depth::Tp DepthV, Color::Tp ColorV>
-typename Processing::BlendClass<DepthV, ColorV>::Output
-Blend(
-  const Buffer<DepthV, ColorV>           &buffer_a,
-  const Buffer<DepthV, Color::Grayscale> &alpha_a,
-  const Buffer<DepthV, ColorV>           &buffer_b,
-  const Buffer<DepthV, Color::Grayscale> &alpha_b,
+template <Depth::Tp DepthV, 
+          Color::Tp ColorV,
+          bool AlphaSetting>
+decltype(auto) Blend(
+        Buffer<DepthV, ColorV, AlphaSetting> &buffer_a, 
+  const Buffer<DepthV, ColorV, AlphaSetting> &buffer_b,
   std::uint64_t x_offset,
   std::uint64_t y_offset,
   Blending::Tp  blending
 ) {
-  return Processing::BlendClass<DepthV, ColorV>({
+  return Processing::BlendClass<DepthV, ColorV, AlphaSetting>({
     buffer_a, 
     buffer_b,
-    alpha_a, 
-    alpha_b, 
     x_offset, 
     y_offset, 
     blending
   }).Process();
 }
-
-template <Depth::Tp DepthV, Color::Tp ColorV>
-typename Processing::BlendClass<DepthV, ColorV>::Output
-Blend(
-  const Buffer<DepthV, ColorV>           &buffer_a,
-  const Buffer<DepthV, Color::Grayscale> &alpha_a,
-  const Buffer<DepthV, ColorV>           &buffer_b,
-  const Buffer<DepthV, Color::Grayscale> &alpha_b,
-  Blending::Tp  blending
-) {
-  return Processing::BlendClass<DepthV, ColorV>({
-    buffer_a, 
-    buffer_b,
-    alpha_a, 
-    alpha_b, 
-    blending
-  }).Process();
-}
-
 };
