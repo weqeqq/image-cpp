@@ -9,7 +9,7 @@ namespace Image::CAPI {
 extern "C" {
 #endif 
 
-image_error image_decode_buffer_from_file(image_buffer *output, const char *file);
+image_error image_decode_from_file(image_buffer *output, const char *file);
 
 #ifdef __cplusplus
 }
