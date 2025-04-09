@@ -49,7 +49,7 @@ public:
   Value operator*() const {
     return data_[0];
   }
-  operator Value() {
+  operator Value() const {
     return data_[0];
   }
 
