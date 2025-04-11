@@ -201,7 +201,30 @@ public:
     return Image::SequenceConvertor(
       input_.cbegin (),
       input_.cend   ()
-    ).template Convert<DepthV, ColorV, AlphaSetting, EndiannessV>(row_count, column_count);
+    ).template Convert<DepthV, ColorV, AlphaSetting, EndiannessV>(
+      row_count,
+      column_count
+    );
+  }
+  template <Depth::Tp DepthV, 
+            Color::Tp ColorV,
+            bool AlphaSetting,
+            Endianness::Tp EndiannessV = Endianness::Determine()>
+  auto Convert(
+    std::uint64_t row_count,
+    std::uint64_t column_count,
+    Depth::Tp depth,
+    Color::Tp color
+  ) {
+    return Image::SequenceConvertor(
+      input_.cbegin (),
+      input_.cend   ()
+    ).template Convert<DepthV, ColorV, AlphaSetting, EndiannessV>(
+      row_count,
+      column_count, 
+      depth, 
+      color
+    );
   }
 private:
   const Sequence &input_;
