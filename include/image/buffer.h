@@ -127,8 +127,8 @@ public:
   }
 
 private:
-  std::uint64_t row_count_;
-  std::uint64_t column_count_;
+  std::uint64_t row_count_    = 0;
+  std::uint64_t column_count_ = 0;
 
   Container data_;
 };
