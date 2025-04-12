@@ -40,7 +40,58 @@ public:
 
 private:
   using Container = std::array<UsedBuffer, ChannelCount>;
+
+public:
+  using Iterator      = typename Container::iterator;
+  using ConstIterator = typename Container::const_iterator;
+
+  auto Begin() {
+    return data_.begin();
+  }
+  auto Begin() const {
+    return data_.begin();
+  }
+  auto ConstBegin() const {
+    return data_.begin();
+  }
+  auto End() {
+    return data_.end();
+  }
+  auto End() const {
+    return data_.end();
+  }
+  auto ConstEnd() const {
+    return data_.end();
+  }
+
+private:
   Container data_;
 };
-};
+
+template <Depth::Tp DepthV, 
+          Color::Tp ColorV,
+          bool AlphaSetting>
+auto begin(ChannelArray<DepthV, ColorV, AlphaSetting> &input) {
+  return input.Begin();
+}
+template <Depth::Tp DepthV, 
+          Color::Tp ColorV,
+          bool AlphaSetting>
+auto begin(const ChannelArray<DepthV, ColorV, AlphaSetting> &input) {
+  return input.Begin();
+}
+template <Depth::Tp DepthV, 
+          Color::Tp ColorV,
+          bool AlphaSetting>
+auto end(ChannelArray<DepthV, ColorV, AlphaSetting> &input) {
+  return input.End();
+}
+template <Depth::Tp DepthV, 
+          Color::Tp ColorV,
+          bool AlphaSetting>
+auto end(const ChannelArray<DepthV, ColorV, AlphaSetting> &input) {
+  return input.End();
+}
+
+}
 
