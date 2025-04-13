@@ -278,6 +278,36 @@ private:
     }
     return background;
   }
+  decltype(auto) BlendOverlay(
+    UsedElement &background, const UsedElement &foreground
+  ) const {
+
+    auto Blend = [](Value background, Value foreground) {
+      float background_f = static_cast<float>(background) / Max;
+      float foreground_f = static_cast<float>(foreground) / Max;
+      float output;
+
+      if (background_f < 0.5f) {
+        output = 2.0f * background_f * foreground_f;
+      } else {
+        output = 1.0f - 2.0f * (1.0f - background_f) * (1.0f - foreground_f);
+      }
+      output = (output < 0.0f)
+        ? 0.0f 
+        : (output > 1.0f) 
+          ? 1.0f 
+          : output;
+
+      return static_cast<Value>(output * Max + 0.5f);
+    };
+
+    for (auto index = 0u;
+              index < Color::ChannelCount<ColorV, DisableAlpha>;
+              index++) {
+      background[index] = Blend(background[index], foreground[index]);
+    }
+    return background;
+  }
 
   decltype(auto) BlendElement(
     UsedElement &background, const UsedElement &foreground, Blending::Tp blending
@@ -295,6 +325,7 @@ private:
       case Blending::ColorDodge   : return BlendColorDodge   (background, foreground);
       case Blending::LinearDodge  : return BlendLinearDodge  (background, foreground);
       case Blending::LighterColor : return BlendLighterColor (background, foreground);
+      case Blending::Overlay      : return BlendOverlay      (background, foreground);
       default: {
         throw std::runtime_error("blerr");
       }
