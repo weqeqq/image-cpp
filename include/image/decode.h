@@ -93,9 +93,9 @@ auto Decode(const Sequence &input) {
   if (DecodeImpl::IsPNG(input)) {
     output = DecodeImpl::DecodePNG<AlphaSetting>(input);
 
-  // } else if (DecodeImpl::IsJPEG(input)) {
-  //   output = DecodeImpl::DecodeJPEG<AlphaSetting>(input);
-  //
+  } else if (DecodeImpl::IsJPEG(input)) {
+    output = DecodeImpl::DecodeJPEG<AlphaSetting>(input);
+
   // } else if (DecodeImpl::IsWebP(input)) {
   //   output = DecodeImpl::DecodeWebP<AlphaSetting>(input);
 

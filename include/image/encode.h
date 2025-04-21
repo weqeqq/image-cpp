@@ -56,7 +56,8 @@ Sequence Encode(const Buffer<DepthV, ColorV, AlphaSetting> &input, Format::Tp fo
   decltype(auto) data = DataConvertor(input).template Convert<DefDepth, DefColor>();
 
   switch (format) {
-    case Format::PNG: return EncodeImpl::EncodePNG(data);
+    case Format::PNG  : return EncodeImpl::EncodePNG  (data);
+    case Format::JPEG : return EncodeImpl::EncodeJPEG (data);
 
     default: throw std::runtime_error("UndefinedFormat");
   }
