@@ -13,6 +13,7 @@ target_sources(image PRIVATE
   source/decode_impl/png.cc
   source/decode_impl/jpeg.cc
   source/encode_impl/png.cc
+  source/encode_impl/jpeg.cc
   source/capi/buffer.cc
   source/capi/decode.cc
   source/capi/encode.cc
