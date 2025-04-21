@@ -63,6 +63,5 @@ write_basic_package_version_file(${CMAKE_CURRENT_BINARY_DIR}/image-version.cmake
 install(FILES
   ${CMAKE_CURRENT_BINARY_DIR}/image-config.cmake
   ${CMAKE_CURRENT_BINARY_DIR}/image-version.cmake
-  DESTINATION lib/cmake/image)
-
-add_subdirectory(test)
+  DESTINATION lib/cmake/image
+)
