@@ -11,6 +11,7 @@ add_library(image::image ALIAS image)
 
 target_sources(image PRIVATE 
   source/decode_impl/png.cc
+  source/decode_impl/jpeg.cc
   source/encode_impl/png.cc
   source/capi/buffer.cc
   source/capi/decode.cc
