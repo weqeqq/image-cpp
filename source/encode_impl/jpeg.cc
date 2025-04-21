@@ -16,8 +16,8 @@ public:
 
     tjhandle compressor = tjInitCompress();
 
-    std::uint8_t *jpeg_buffer = nullptr;
-    std::uint64_t jpeg_length = 0; 
+    unsigned char *jpeg_buffer = nullptr;
+    unsigned long  jpeg_length = 0; 
 
     tjCompress2(
       compressor, 
