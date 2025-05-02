@@ -321,7 +321,7 @@ private:
       } else {
         return 2.0f * background_f * (1.0f - foreground_f) + std::sqrt(background_f) * (2.0f * foreground_f - 1.0f);
       }
-    }
+    };
     for (auto index = 0u;
               index < Color::ChannelCount<ColorV, DisableAlpha>;
               index++) {
