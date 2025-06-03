@@ -11,9 +11,10 @@ static bool CompareSignature(File::ByteSpan signature, File::ByteSpan data) {
   if (signature.size() > data.size()) {
     return false;
   }
-  return std::ranges::equal(
-    signature,
-    data
+  return std::equal(
+    signature.begin(),
+    signature.end(),
+    data.begin()
   );
 }
 static bool IsJpeg(File::ByteSpan data) {
@@ -95,9 +96,9 @@ Buffer Decode(File::ByteSpan data) {
   return Decode(data, DetectFormat(data));
 }
 Buffer Decode(const std::filesystem::path &path, Format format) {
-  return Decode(File::Read(path), format);
+  return Decode(File::Read(path.string()), format);
 }
 Buffer Decode(const std::filesystem::path &path) {
-  return Decode(File::Read(path));
+  return Decode(File::Read(path.string()));
 }
 }

@@ -45,7 +45,7 @@ static Format DetectFormat(const std::filesystem::path filepath) {
 void Encode(
   Buffer buffer, const std::filesystem::path &path, Format format
 ) {
-  return File::Write(path, Encode(buffer, format));
+  return File::Write(path.string(), Encode(buffer, format));
 }
 void Encode(
   Buffer buffer, const std::filesystem::path &path

@@ -17,8 +17,8 @@ File::ByteSequence Encode(
 ) {
   auto compressor = tjInitCompress();
 
-  std::uint8_t *buffer = nullptr;
-  std::uint64_t length = 0;
+  unsigned char *buffer = nullptr;
+  unsigned long  length = 0;
   
   if (tjCompress2(
     compressor,
