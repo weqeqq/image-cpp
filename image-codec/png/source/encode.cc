@@ -14,8 +14,8 @@ File::ByteSequence Encode(
   auto channel_count = 0;
 
   switch (color) {
-    case Color::Rgba : channel_count = 4;
-    case Color::Rgb  : channel_count = 3;
+    case Color::Rgba : channel_count = 4; break;
+    case Color::Rgb  : channel_count = 3; break;
     default: {
       throw EncodeError("Unsupported color");
     }
