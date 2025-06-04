@@ -214,7 +214,7 @@ public:
 
     File::ByteSequence data
   
-  ) : data_(std::move(data)) {}
+  ) : row_count_(row_count), column_count_(column_count), data_(std::move(data)) {}
 
   template <typename Self>
   static auto SubscriptOperator(Self &self, std::uint64_t index) {
