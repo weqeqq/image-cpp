@@ -34,9 +34,10 @@ target_include_directories(
   INTERFACE 
   ${TARGET_INCLUDE_DIR}
 )
-target_link_directories(
+target_link_libraries(
   target::jpeg-turbo
   INTERFACE 
-  ${TARGET_LIB_DIR}
+  ${TARGET_LIB_DIR}/libjpeg.a
+  ${TARGET_LIB_DIR}/libturbojpeg.a
 )
 add_dependencies(target::jpeg-turbo jpeg-turbo)

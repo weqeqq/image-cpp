@@ -33,9 +33,9 @@ target_include_directories(
   INTERFACE 
   ${TARGET_INCLUDE_DIR}
 )
-target_link_directories(
+target_link_libraries(
   target::wuffs
   INTERFACE 
-  ${TARGET_LIB_DIR}
+  ${TARGET_LIB_DIR}/libwuffs.a
 )
 add_dependencies(target::wuffs wuffs)
