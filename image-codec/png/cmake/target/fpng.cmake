@@ -2,11 +2,9 @@
 include(ExternalProject)
 
 ExternalProject_Add(
-  fpng-project
+  fpng
   GIT_REPOSITORY https://github.com/richgel999/fpng.git 
   GIT_TAG        925796543b9d26b8edfcdcecd94c1dac280f29fc
-  GIT_PROGRESS   ON
-  PREFIX ${CMAKE_BINARY_DIR}/fpng-project
 
   PATCH_COMMAND     
     ${CMAKE_COMMAND} 
@@ -16,26 +14,29 @@ ExternalProject_Add(
 
   CMAKE_ARGS
     -DCMAKE_BUILD_TYPE=Release
+    -DBUILD_SHARED_LIBS=OFF
     -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR> 
     -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}
 )
-
 add_library(
-  target_fpng STATIC IMPORTED
-)
-add_library(
-  target::fpng ALIAS target_fpng
+  target::fpng INTERFACE IMPORTED
 )
 ExternalProject_Get_Property(
-  fpng-project INSTALL_DIR
+  fpng INSTALL_DIR
 )
 set(TARGET_LIB_DIR     ${INSTALL_DIR}/lib)
 set(TARGET_INCLUDE_DIR ${INSTALL_DIR}/include)
 
 file(MAKE_DIRECTORY ${TARGET_INCLUDE_DIR})
 
-set_target_properties(target_fpng PROPERTIES
-  IMPORTED_LOCATION             ${TARGET_LIB_DIR}/libfpng.a
-  INTERFACE_INCLUDE_DIRECTORIES ${TARGET_INCLUDE_DIR})
-
-add_dependencies(target_fpng fpng-project)
+target_include_directories(
+  target::fpng 
+  INTERFACE 
+  ${TARGET_INCLUDE_DIR}
+)
+target_link_directories(
+  target::fpng 
+  INTERFACE
+  ${TARGET_LIB_DIR}
+)
+add_dependencies(target::fpng fpng)
