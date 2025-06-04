@@ -16,6 +16,9 @@ ExternalProject_Add(
     -DCMAKE_BUILD_TYPE=Release
     -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
     -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}
+
+  BUILD_BYPRODUCTS 
+    <INSTALL_DIR>/lib/libwuffs.a
 )
 add_library(
   target::wuffs INTERFACE IMPORTED

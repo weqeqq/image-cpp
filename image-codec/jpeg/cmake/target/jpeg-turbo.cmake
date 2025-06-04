@@ -13,6 +13,10 @@ ExternalProject_Add(
     -DENABLE_STATIC=ON
     -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}
     -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+
+  BUILD_BYPRODUCTS
+    <INSTALL_DIR>/lib64/libjpeg.a 
+    <INSTALL_DIR>/lib64/libturbojpeg.a 
 )
 add_library(
   target::jpeg-turbo INTERFACE IMPORTED
