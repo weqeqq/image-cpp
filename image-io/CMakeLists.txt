@@ -7,7 +7,7 @@ add_library(
 
 target_link_libraries(image_io
   PUBLIC
-    target::file
+    file::file
     image::core
 
   PRIVATE

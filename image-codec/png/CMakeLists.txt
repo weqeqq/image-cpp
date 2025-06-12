@@ -14,7 +14,7 @@ include(cmake/target/fpng.cmake)
 target_link_libraries(image_codec_png
   PUBLIC
     image::core
-    target::file
+    file::file
 
   PRIVATE
     target::wuffs 

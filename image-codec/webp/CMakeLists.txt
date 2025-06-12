@@ -13,7 +13,7 @@ include(cmake/target/webp.cmake)
 target_link_libraries(image_codec_webp
   PUBLIC
     image::core
-    target::file
+    file::file
 
   PRIVATE
     target::webp
