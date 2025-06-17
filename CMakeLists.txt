@@ -6,11 +6,13 @@ set(PROJECT_VERSION_MAJOR 0)
 set(PROJECT_VERSION_MINOR 1)
 set(PROJECT_VERSION_PATCH 0)
 
-option(IMAGE_FETCH_PUBLIC "Fetch public dependencies" OFF)
+option(IMAGE_FETCH_PUBLIC "Fetch public dependencies." OFF)
 if(IMAGE_FETCH_PUBLIC) 
-  set(IMAGE_FETCH_FILE ON)
+  set(IMAGE_FETCH_FILE     ON)
+  set(IMAGE_FETCH_ITERABLE ON)
 else()
-  option(IMAGE_FETCH_FILE "Fetch file dependency" OFF)
+  option(IMAGE_FETCH_FILE     "Fetch 'file' dependency."     OFF)
+  option(IMAGE_FETCH_ITERABLE "Fetch 'iterable' dependency." OFF)
 endif()
 
 include(FetchContent) 
@@ -32,6 +34,31 @@ if(IMAGE_FETCH_FILE)
 else()
   find_package(file REQUIRED)
 endif()
+if(IMAGE_FETCH_ITERABLE)
+  Dependency(iterable::iterable
+    REPOSITORY 
+      weqeqq/iterable-cpp 
+    TAG
+      a6e65c0297c8d430b1f4ca1a59ce4f493593fc7a
+  )
+else()
+  find_package(iterable REQUIRED)
+endif()
+
+include(GenerateExportHeader)
+function(GenerateExportHeader target file)
+  set(export_header_dir 
+    ${CMAKE_BINARY_DIR}/export-header PARENT_SCOPE)
+
+  set(export_header_file 
+    ${CMAKE_BINARY_DIR}/export-header/${file})
+
+  generate_export_header(
+    ${target} 
+    EXPORT_FILE_NAME 
+    ${CMAKE_BINARY_DIR}/export-header/${file}
+  ) 
+endfunction()
 
 add_subdirectory(module/core)
 add_subdirectory(module/codec)
