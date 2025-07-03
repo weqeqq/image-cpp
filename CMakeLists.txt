@@ -23,6 +23,5 @@ target_sources(image INTERFACE
   include/image/core/format.h
   include/image/processing/blend.h
   include/image/buffer.h
-  include/image/decode.h
   include/image/element.h
-  include/image/encode.h)
+)
