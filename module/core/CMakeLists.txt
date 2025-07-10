@@ -1,18 +1,13 @@
 
-add_library(
-  image_core INTERFACE)
 
-add_library(
-  image::core ALIAS image_core)
+add_library(image-core INTERFACE)
+add_library(image::core ALIAS image-core)
 
-target_compile_features(
-  image_core INTERFACE cxx_std_23)
-
-target_sources(image_core PUBLIC
-  FILE_SET  HEADERS 
-  BASE_DIRS include
-  FILES 
-  include/image/core/error.h
+target_sources(image-core
+    INTERFACE
+        FILE_SET HEADERS BASE_DIRS
+            headers
+        FILES
+            headers/image/core/error.h
+            headers/image/core/buffer.h
 )
-
-

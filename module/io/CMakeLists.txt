@@ -1,30 +1,30 @@
 
-add_library(
-  image_io)
+add_library(image-io)
+add_library(image::io ALIAS image-io)
 
-add_library(
-  image::io ALIAS image_io)
-
-target_link_libraries(image_io
+target_link_libraries(image-io
   PUBLIC
-    file::file
+    image::external::file-cpp
     image::core
-
   PRIVATE
     image::codec
 )
-include(cmake/generate-export-header.cmake)
-
-target_sources(image_io PUBLIC 
-  FILE_SET  HEADERS 
-  BASE_DIRS include ${EXPORT_HEADER_BASE_DIR}
-  FILES 
-  include/image/io/decode.h
-  include/image/io/encode.h
-
-  ${EXPORT_HEADER_FILE_NAME}
-
-  PRIVATE 
-  source/decode.cc 
-  source/encode.cc
+include(GenerateExportHeader)
+generate_export_header(
+    image-io
+    EXPORT_FILE_NAME ${CMAKE_CURRENT_BINARY_DIR}/headers/image/io/export.h
+)
+target_sources(
+    image-io
+    PUBLIC
+        FILE_SET HEADERS BASE_DIRS
+            headers
+            ${CMAKE_CURRENT_BINARY_DIR}/headers
+        FILES
+            headers/image/io/decode.h
+            headers/image/io/encode.h
+            ${CMAKE_CURRENT_BINARY_DIR}/headers/image/io/export.h
+    PRIVATE
+        sources/decode.cc
+        sources/encode.cc
 )

@@ -1,18 +1,15 @@
 
-add_library(
-  image_main INTERFACE
-)
-add_library(
-  image::main ALIAS image_main
-)
-target_link_libraries(image_main
+add_library(image INTERFACE)
+add_library(image::image ALIAS image)
+target_link_libraries(image
   INTERFACE
     image::core
-    image::io
+    image::processing
 )
-target_sources(image_main PUBLIC
-  FILE_SET  HEADERS 
-  BASE_DIRS include
-  FILES 
-  include/image/image.h
+target_sources(image
+    PUBLIC
+        FILE_SET HEADERS BASE_DIRS
+            headers
+        FILES
+            headers/image/image.h
 )
