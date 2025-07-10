@@ -27,10 +27,10 @@ class Buffer {
   }
 public:
   Buffer(std::vector<T> buffer, unsigned row_count, unsigned column_count, unsigned channel_count = 4)
-    : row_count_     ( row_count      )
-    , column_count_  ( column_count   )
-    , channel_count_ ( channel_count  )
-    , buffer_        ( buffer         ) {}
+    : row_count_     ( row_count         )
+    , column_count_  ( column_count      )
+    , channel_count_ ( channel_count     )
+    , buffer_        ( std::move(buffer) ) {}
 
   Buffer(unsigned row_count, unsigned column_count, unsigned channel_count = 4)
     : Buffer(std::vector<T>(
