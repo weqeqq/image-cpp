@@ -28,3 +28,6 @@ target_sources(
         sources/decode.cc
         sources/encode.cc
 )
+if(IMAGE_FORMAT_JPEG)
+target_compile_definitions(image-io IMAGE_FORMAT_JPEG)
+endif()

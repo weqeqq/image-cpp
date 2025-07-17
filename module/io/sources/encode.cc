@@ -1,4 +1,6 @@
 
+#ifdef IMAGE_FORMAT_JPEG
+
 #include "image/codec/jpeg/color.h"
 #include "image/codec/jpeg/sampling.h"
 #include "image/io/error.h"
@@ -72,3 +74,5 @@ void Encode(
 }
 
 }
+
+#endif

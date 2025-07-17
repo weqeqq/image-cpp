@@ -1,4 +1,6 @@
 
+#ifdef IMAGE_FORMAT_JPEG
+
 #include <image/io/decode.h>
 
 #include <image/codec/jpeg.h>
@@ -105,3 +107,5 @@ Buffer<> Decode(const std::filesystem::path &path) {
   return Decode(File::From(path));
 }
 }
+
+#endif
