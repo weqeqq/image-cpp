@@ -29,10 +29,10 @@ public:
 private:
   void Blenda(U8 *bg, const U8 *fg) const {
     float alpha = float(fg[3]) / 0xff;
-     for (auto ch = 0u; ch < 3; ch++) {
-       bg[ch] = (bg[ch] * (1.0f - alpha)) + (fg[ch] * alpha);
-     }
-     bg[3] = std::max(bg[3], fg[3]);
+    for (auto ch = 0u; ch < 3; ch++) {
+      bg[ch] = (bg[ch] * (1.0f - alpha)) + (fg[ch] * alpha);
+    }
+    bg[3] = std::max(bg[3], fg[3]);
   }
   void BlendNormal(U8 *bg, const U8 *fg) const {
     for (auto ch = 0u; ch < 4; ch++) {

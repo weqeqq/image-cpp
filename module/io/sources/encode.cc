@@ -1,4 +1,7 @@
 
+#include "image/codec/jpeg/color.h"
+#include "image/codec/jpeg/sampling.h"
+#include "image/io/error.h"
 #include <image/io/encode.h>
 
 #include <file/output.h>
@@ -7,14 +10,30 @@
 // #include <image/codec/webp.h>
 
 namespace Image {
+//
 
+std::vector<U8> EncodeJpeg(const Buffer<> &buffer) {
+  Image::JpegCodec::Color color;
+  switch (buffer.ChannelCount()) {
+    case 1: color = Image::JpegCodec::Color::Gray; break;
+    case 3: color = Image::JpegCodec::Color::Rgb;  break;
+    case 4: color = Image::JpegCodec::Color::Rgba; break;
+    default: {
+      throw EncodeError("ChannelCountError");
+    }
+  }
+  return Image::JpegCodec::Encode(
+    buffer.Underlying(),
+    buffer.RowCount(),
+    buffer.ColumnCount(),
+    color,
+    Image::JpegCodec::Sampling::S444, 100);
+}
 std::vector<U8> Encode(
   const Buffer<> &buffer, Format format
 ) {
   switch (format) {
-    // case Format::Png  : return Image::PngCodec  ::Encode(buffer.Data(), buffer.RowCount(), buffer.ColumnCount());
-    case Format::Jpeg : return Image::JpegCodec ::Encode(buffer.Underlying(), buffer.RowCount(), buffer.ColumnCount());
-    // case Format::Webp : return Image::WebpCodec ::Encode(buffer.Data(), buffer.RowCount(), buffer.ColumnCount());
+    case Format::Jpeg: return EncodeJpeg(buffer);
     default:
       throw EncodeError("Unsupported image format.");
   }
